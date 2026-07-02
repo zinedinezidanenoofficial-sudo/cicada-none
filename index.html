@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cicada Node</title>
+
+<style>
+body{
+margin:0;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+font-family:"Courier New",monospace;
+color:#c8ffc8;
+background:#000;
+overflow:hidden;
+}
+
+body::before{
+content:"";
+position:absolute;
+inset:0;
+background:
+radial-gradient(circle at var(--x,50%) var(--y,50%),rgba(0,255,120,.10),transparent 55%),
+#000;
+z-index:-3;
+}
+
+.grid{
+position:absolute;
+inset:0;
+display:grid;
+grid-template-columns:repeat(14,1fr);
+grid-template-rows:repeat(9,1fr);
+z-index:-2;
+opacity:.12;
+}
+
+.cell{
+background:rgba(0,255,120,0.03);
+animation:float 7s ease-in-out infinite;
+}
+
+@keyframes float{
+0%,100%{transform:translateY(0);opacity:.7}
+50%{transform:translateY(-2px);opacity:.9}
+}
+
+.network{
+position:absolute;
+inset:0;
+z-index:-1;
+}
+
+.line{
+position:absolute;
+height:1px;
+background:rgba(124,255,124,.12);
+transform-origin:left center;
+animation:pulse 3s infinite ease-in-out;
+}
+
+@keyframes pulse{
+0%,100%{opacity:.1}
+50%{opacity:.35}
+}
+
+.node{
+position:absolute;
+width:6px;
+height:6px;
+border-radius:50%;
+background:rgba(124,255,124,.35);
+box-shadow:0 0 10px rgba(124,255,124,.2);
+animation:drift 6s ease-in-out infinite;
+}
+
+@keyframes drift{
+0%,100%{transform:translate(0,0)}
+50%{transform:translate(8px,-6px)}
+}
+
+.container{
+text-align:center;
+max-width:650px;
+padding:25px;
+border:1px solid rgba(0,255,120,.15);
+background:rgba(0,0,0,.75);
+box-shadow:0 0 40px rgba(0,255,120,.05);
+z-index:2;
+position:relative;
+}
+
+/* 🔥 УСИЛЕННЫЙ ASCII */
+.ascii{
+white-space:pre;
+font-size:11px;
+line-height:11px;
+color:#b6ffb6;
+opacity:1;
+animation:flicker 2.2s infinite;
+text-shadow:
+0 0 6px rgba(124,255,124,.35),
+0 0 14px rgba(124,255,124,.25),
+0 0 24px rgba(124,255,124,.15);
+filter:brightness(1.35) contrast(1.2);
+}
+
+@keyframes flicker{
+0%,100%{
+opacity:1;
+filter:brightness(1.45) contrast(1.25);
+}
+45%{
+opacity:.85;
+filter:brightness(1.1) contrast(1.15);
+}
+50%{
+opacity:1;
+filter:brightness(1.6) contrast(1.3);
+}
+55%{
+opacity:.8;
+filter:brightness(1.0) contrast(1.1);
+}
+}
+
+.title{
+margin:15px 0;
+font-size:14px;
+opacity:.9;
+}
+
+.btn{
+display:inline-block;
+padding:11px 20px;
+border:1px solid rgba(124,255,124,.5);
+color:rgba(124,255,124,.8);
+text-decoration:none;
+letter-spacing:2px;
+margin:15px 0;
+}
+
+.btn:hover{
+background:rgba(124,255,124,.08);
+}
+
+.panel{
+text-align:left;
+border:1px solid rgba(0,255,120,.15);
+padding:15px;
+background:rgba(0,0,0,.55);
+}
+
+.panel h2{
+margin:0 0 8px 0;
+font-size:13px;
+color:#7CFF7C;
+}
+
+.panel p{
+margin:4px 0;
+font-size:12px;
+opacity:.85;
+}
+</style>
+</head>
+
+<body>
+
+<div class="grid" id="grid"></div>
+<div class="network" id="network"></div>
+
+<div class="container">
+
+<div class="ascii">
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⣿⣿⣿⣿⣿⣿⣶⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⢿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⢻⣿⢿⣿⣿⣿⣿⣿⣿⣿⡿⠿⠿⠶⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠻⣠⡿⠿⠛⠻⢿⣿⡇⠀⠀⠀⠀⢿⣄⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢸⣏⠀⠀⠀⠀⣸⡿⢷⣦⣤⣤⣴⣿⠟⠀⠀⢀⣴⣶⡄⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⣿⣤⣤⣴⣿⣿⡅⡄⢹⣿⡿⠛⠋⠀⠀⢀⣼⣿⣿⣿⡧⠀
+⠀⠀⠀⠀⢀⡀⠀⠀⠈⠛⠟⠛⢻⣿⣿⣿⣿⣿⡿⠀⢀⣤⣶⣿⡿⠛⠋⠉⠀⠀
+⠀⠀⠀⠀⣿⣿⣦⣤⣤⣄⣀⣀⡈⢛⠛⠛⠛⠁⣠⣾⡿⠛⠉⠀⠀⠀⠀⠀⣀⠀
+⠀⠀⠀⢼⣿⣿⣿⠿⠿⠿⠿⠿⢿⢿⣿⣿⣿⣿⣿⣿⣶⣶⣶⣶⣶⣶⣶⣾⣿⣏
+⠀⠀⠀⠈⠉⠀⠀⠀⠀⠀⠀⠀⣠⣶⣿⠿⠋⠁⠉⠉⠉⠉⠉⠙⠛⠛⠻⠿⠿⣿
+</div>
+
+<div class="title">
+The official channel of the Cicada Corporation :
+</div>
+
+<a class="btn" href="https://t.me/+H8Byb2ovBM8yNDRk" target="_blank">
+ПЕРЕЙТИ В КАНАЛ
+</a>
+
+<div class="panel">
+<h2>Current information</h2>
+<p><b>Chief's:</b> Alonso & Tom Hanniger</p>
+<p><b>Members:</b> Harry Warden & John Doe & Bruce Chen & ᛪ & Jack Ripper & Beststriker</p>
+</div>
+
+</div>
+
+<script>
+const grid=document.getElementById("grid");
+
+for(let i=0;i<126;i++){
+const d=document.createElement("div");
+d.className="cell";
+grid.appendChild(d);
+}
+
+let t=0;
+
+function animate(){
+const cells=document.querySelectorAll(".cell");
+t+=0.01;
+
+cells.forEach((c,i)=>{
+const wave=Math.sin(t+i*0.08)*0.5+0.5;
+c.style.opacity=0.08+wave*0.15;
+});
+
+requestAnimationFrame(animate);
+}
+
+animate();
+
+/* сеть */
+const network=document.getElementById("network");
+
+const nodes=[];
+const nodeCount=12;
+
+for(let i=0;i<nodeCount;i++){
+const n=document.createElement("div");
+n.className="node";
+network.appendChild(n);
+
+nodes.push({
+el:n,
+x:Math.random(),
+y:Math.random(),
+vx:(Math.random()-0.5)*0.0015,
+vy:(Math.random()-0.5)*0.0015
+});
+}
+
+function drawLines(){
+document.querySelectorAll(".line").forEach(l=>l.remove());
+
+for(let i=0;i<nodes.length;i++){
+for(let j=i+1;j<nodes.length;j++){
+const a=nodes[i].el.getBoundingClientRect();
+const b=nodes[j].el.getBoundingClientRect();
+
+const x1=a.left+a.width/2;
+const y1=a.top+a.height/2;
+const x2=b.left+b.width/2;
+const y2=b.top+b.height/2;
+
+const dx=x2-x1;
+const dy=y2-y1;
+const dist=Math.hypot(dx,dy);
+
+if(dist<220){
+const line=document.createElement("div");
+line.className="line";
+line.style.width=dist+"px";
+line.style.left=x1+"px";
+line.style.top=y1+"px";
+line.style.transform=`rotate(${Math.atan2(dy,dx)}rad)`;
+network.appendChild(line);
+}
+}
+}
+}
+
+function move(){
+nodes.forEach(n=>{
+n.x+=n.vx;
+n.y+=n.vy;
+
+if(n.x<0||n.x>1)n.vx*=-1;
+if(n.y<0||n.y>1)n.vy*=-1;
+
+n.el.style.left=n.x*100+"%";
+n.el.style.top=n.y*100+"%";
+});
+
+drawLines();
+requestAnimationFrame(move);
+}
+
+move();
+
+/* фон */
+document.addEventListener("mousemove",(e)=>{
+document.body.style.setProperty("--x",(e.clientX/window.innerWidth)*100+"%");
+document.body.style.setProperty("--y",(e.clientY/window.innerHeight)*100+"%");
+});
+</script>
+
+</body>
+</html>
